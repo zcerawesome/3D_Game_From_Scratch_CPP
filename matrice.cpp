@@ -58,13 +58,7 @@ void matrice<T>::operator=(std::vector<std::vector<T>>& inp)
 template <typename T>
 void matrice<T>::operator=(matrice<T>& inp)
 {
-    matrice<T> temp = std::vector<std::vector<T>>(inp.row);
-    for (auto& typestuff: matrix)
-        typestuff.resize(inp.col);
-    for(int i = 0; i < inp.size(); i++)
-        for(int j = 0; j < inp[0].size(); j++)
-            temp[i][j] = inp[i][j];
-    matrix = temp.matrix;
+    matrix = inp.matrix;
 }
 
 template <typename T>
