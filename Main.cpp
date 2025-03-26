@@ -65,43 +65,44 @@ void display()
     // Begin drawing a polygon (in this case, a square)
     glBegin(GL_LINES);  
     float fov = 3.14 / 2.0;
-    float aspect = MAX_WIDTH / MAX_HEIGHT;
+    float aspect = (float)MAX_WIDTH / (float)MAX_HEIGHT;
     float zNear = 0.1f;
     float zFar = 500.0f;
     float f = 1.0f / tan(fov / 2.0f);
     matrice<float> projection(4,4);
-    projection.matrix = {{f/aspect, 0,0,0}, {0, f,0,0}, {0,0,-(zFar + zNear) / (zNear-zFar), -(2*zFar*zNear) / (zNear-zFar)}, {0,0,1,0}};
+    projection.matrix = {{f*1/aspect, 0,0,0}, {0, f,0,0}, {0,0,(zFar + zNear) / (zFar - zNear), (2*zFar*zNear) / (zFar - zNear)}, {0,0,-1,0}};
     for(std::vector<std::vector<GLfloat>>& squares: square)
     {
         matrice<float> temp(4,1);
         temp = squares[0];
         temp[3][0] = 1.0;
         temp.matrix = (projection * temp).matrix;
-        float x = (temp[0][0] / temp[3][0]) / 2 * MAX_WIDTH;
-        float y = temp[1][0] / temp[3][0] / 2 * MAX_HEIGHT;
+        float x = (temp[0][0] / temp[3][0]);
+        float y = temp[1][0] / temp[3][0];
         std::cout << x << ", " << y << std::endl;
+        std::cout << temp[1][0] << std::endl;
         temp = squares[1];
         temp[3][0] = 1.0;
         temp.matrix = (projection * temp).matrix;
-        float x1 = temp[0][0] / temp[3][0] /2 * MAX_WIDTH;
-        float y1 = temp[1][0] / temp[3][0] / 2 * MAX_HEIGHT;
+        float x1 = temp[0][0] / temp[3][0];
+        float y1 = temp[1][0] /temp[3][0];
         std::cout << x1 << ", " << y1 << std::endl;
         temp = squares[2];
         temp[3][0] = 1.0;
         temp.matrix = (projection * temp).matrix;
-        float x2 = temp[0][0] / temp[3][0] / 2 * MAX_WIDTH;
-        float y2 = temp[1][0] / temp[3][0] / 2 * MAX_HEIGHT;
+        float x2 = temp[0][0] / temp[3][0];
+        float y2 = temp[1][0] / temp[3][0];
         std::cout << x2 << ", " << y2 << std::endl;
         temp = squares[3];
         temp[3][0] = 1.0;
         temp.matrix = (projection * temp).matrix;
-        float x3 = temp[0][0] / temp[3][0] / 2 * MAX_WIDTH;
-        float y3 = temp[1][0] / temp[3][0] / 2 * MAX_HEIGHT;
+        float x3 = temp[0][0] / temp[3][0];
+        float y3 = temp[1][0] / temp[3][0];
         std::cout << x3 << ", " << y3 << std::endl;
-        glVertex2f(abs_to_float_x(x),abs_to_float_y(y)); glVertex2f(abs_to_float_x(x1),abs_to_float_y(y1));
-        glVertex2f(abs_to_float_x(x1),abs_to_float_y(y1)); glVertex2f(abs_to_float_x(x2),abs_to_float_y(y2));
-        glVertex2f(abs_to_float_x(x2),abs_to_float_y(y2)); glVertex2f(abs_to_float_x(x3),abs_to_float_y(y3));
-        glVertex2f(abs_to_float_x(x3),abs_to_float_y(y3)); glVertex2f(abs_to_float_x(x),abs_to_float_y(y));
+        glVertex2f(x, y); glVertex2f( x1,y1);
+        glVertex2f(x1,y1); glVertex2f(x2,y2);
+        glVertex2f(x2,y2); glVertex2f(x3,y3);
+        glVertex2f(x3,y3); glVertex2f(x, y);
     }
     // degree += 0.1/2;
     glEnd();
@@ -143,8 +144,7 @@ int main()
     {
         for(std::vector<GLfloat>& plane: squares)
         {
-            // plane[0] += 960;
-            // plane[1] += 540;
+            plane[2] *= -1;
         }
     }
     int argc = 1;
