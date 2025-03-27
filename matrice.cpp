@@ -36,6 +36,14 @@ matrice<T>::matrice(int row, int col): row(row), col(col)
     }
 }
 
+
+template <typename T>
+void matrice<T>::addRow(std::vector<T> inprow)
+{
+    row++;
+    matrix.push_back(inprow);
+}
+
 template <typename T>
 int matrice<T>::size()
 {

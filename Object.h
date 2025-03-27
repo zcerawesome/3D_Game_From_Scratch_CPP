@@ -1,8 +1,8 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#define MAX_WIDTH 1920
-#define MAX_HEIGHT 1080
+#define MAX_WIDTH glutGet(GLUT_WINDOW_WIDTH)
+#define MAX_HEIGHT glutGet(GLUT_WINDOW_HEIGHT)
 
 enum Shape {
     Circle,
