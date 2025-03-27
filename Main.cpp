@@ -4,6 +4,9 @@
 #include <vector>
 #include "matrice.h"
 #include "Object.h"
+#include "Entity.h"
+
+#define view_rad(x) x * M_PI / 2160
 
 GLfloat abs_to_float_x(int input)
 {
@@ -19,32 +22,48 @@ GLfloat abs_to_float_y(int input)
     return value;
 }
 
-std::vector<std::vector<std::vector<GLfloat>>> square = {{{100,100,100}, {100, 50, 100}, {50, 50, 100}, {50, 100, 100}}, 
-                                                        {{100, 100, 100}, {100, 100, 50}, {100, 50, 50}, {100,50,100}},
-                                                        {{50,50,100}, {100,50,100}, {100, 50, 50}, {50, 50, 50}},
-                                                        {{50, 100, 100}, {50, 100, 50}, {50, 50, 50}, {50, 50, 100}},
-                                                        {{100,100,100}, {100,100,50}, {50, 100, 50}, {50, 100, 100}},
-                                                        {{50,50,50}, {50,100,50}, {100,100,50}, {100,50,50}}};
+std::vector<std::vector<std::vector<GLfloat>>> square({{{10,10,10}, {10, -10, 10}, {-10, -10, 10}, {-10, 10, 10}},
+                                                        {{10,10,10}, {10, 10, -10}, {10, -10, -10}, {10,-10, 10}},
+                                                        {{10,10,10}, {10,10,-10}, {-10, 10, -10}, {-10, 10, 10}}, 
+                                                        {{-10, 10, 10}, {-10, 10, -10}, {-10, -10, -10}, {-10, -10, 10}},
+                                                        {{-10, -10, 10}, {-10,-10,-10}, {10, -10, -10}, {10, -10, 10}},
+                                                        {{-10,-10,-10}, {-10, 10, -10}, {10, 10, -10}, {10, -10, -10}}});
 
-float d = 500;
+float FOV = M_PI / 3;
+float zNear = 0.1;
+float zFar = 1000.0;
+float aspect = 16.0/9.0;
 
-float degree = 0.1;
+int initial[2] = {-1,-1};
+int mouseX, mouseY;
 
-float calc_x(std::vector<GLfloat>& plane)
+
+Entity player(0,0,0,0,0,0);
+bool move[4] = {0,0,0,0};
+
+void mouseMove(int x, int y)
 {
-    return plane[0] / (1 + plane[2]/d);
+    mouseX += x - initial[0];
+    mouseY += y - initial[1];
+    if(initial[0] == -1)
+    {
+        mouseX = 0;
+        mouseY = 0;
+        initial[0] = MAX_WIDTH/2;
+        initial[1] = MAX_HEIGHT/2;
+    }
 }
 
-float calc_y(std::vector<GLfloat>& plane)
+void draw_line(matrice<GLfloat>& plane1, matrice<GLfloat>& plane2)
 {
-    // std::cout << plane[1] / (1 + plane[2]/d) << std::endl;
-    return plane[1] / (1 + plane[2]/d);
-}
-
-void draw_line(std::vector<GLfloat>& plane1, std::vector<GLfloat>& plane2)
-{
-    glVertex2f(abs_to_float_x(calc_x(plane1)), abs_to_float_y(calc_y(plane1)));
-    glVertex2f(abs_to_float_x(calc_x(plane2)), abs_to_float_y(calc_y(plane2)));
+    if((plane1[0][0] > 1 && plane2[0][0] > 1) || (plane1[0][0] < -1 && plane2[0][0] < -1) ||
+        (plane1[1][0] > 1 && plane2[1][0] > 1) || (plane1[1][0] < -1 && plane2[1][0] < -1) ||
+        (plane1[2][0] > 1 && plane2[2][0] > 1) || (plane1[2][0] < -1 && plane2[2][0] < -1))
+        return;
+    std::cout << "Plane 1 " << plane1[1][0] << std::endl;
+    std::cout << "Plane 2 " << plane2[1][0] << std::endl;
+    glVertex2f(plane1[0][0], plane1[1][0]);
+    glVertex2f(plane2[0][0], plane2[1][0]);
 }
 
 void master_rotation_matrix(matrice<float>& rotation, float x, float y, float z)
@@ -62,51 +81,59 @@ void display()
 {
     glClear(GL_COLOR_BUFFER_BIT);
     glColor3f(1.0f, 0.0f, 0.0f);
-    // Begin drawing a polygon (in this case, a square)
     glBegin(GL_LINES);  
-    float fov = 3.14 / 2.0;
-    float aspect = (float)MAX_WIDTH / (float)MAX_HEIGHT;
-    float zNear = 0.1f;
-    float zFar = 500.0f;
-    float f = 1.0f / tan(fov / 2.0f);
-    matrice<float> projection(4,4);
-    projection.matrix = {{f*1/aspect, 0,0,0}, {0, f,0,0}, {0,0,(zFar + zNear) / (zFar - zNear), (2*zFar*zNear) / (zFar - zNear)}, {0,0,-1,0}};
+    // Begin drawing a polygon (in this case, a square)
+    float forward = 0;
+    float right = 0;
+    if(move[0])
+        forward = -.2;
+    else if(move[1])
+        forward = .2;
+    if(move[2])
+        right = .2;
+    else if(move[3])
+        right = -.2;
+    
+    player.z_vel += forward * cos(view_rad(mouseX))  + right * sin(view_rad(mouseX));
+    player.x_vel += -forward * sin(view_rad(mouseX)) + right * cos(view_rad(mouseX));
+    player.update();
+    matrice<GLfloat> projection((std::vector<std::vector<float>>){{1.0f / (aspect * tan(FOV/2)), 0,0,0}, 
+                                                                {0, 1.0f/(tan(FOV/2)), 0,0},
+                                                                {0,0, (zFar+zNear)/(zNear-zFar), (2*zFar*zNear)/(zNear-zFar)},
+                                                                {0,0,-1,0}});
+    matrice<float> rotation(3,3);
+    master_rotation_matrix(rotation, (mouseY) * M_PI / 2160, (mouseX) * M_PI / 2160, 0);
     for(std::vector<std::vector<GLfloat>>& squares: square)
     {
-        matrice<float> temp(4,1);
-        temp = squares[0];
-        temp[3][0] = 1.0;
-        temp.matrix = (projection * temp).matrix;
-        float x = (temp[0][0] / temp[3][0]);
-        float y = temp[1][0] / temp[3][0];
-        std::cout << x << ", " << y << std::endl;
-        std::cout << temp[1][0] << std::endl;
-        temp = squares[1];
-        temp[3][0] = 1.0;
-        temp.matrix = (projection * temp).matrix;
-        float x1 = temp[0][0] / temp[3][0];
-        float y1 = temp[1][0] /temp[3][0];
-        std::cout << x1 << ", " << y1 << std::endl;
-        temp = squares[2];
-        temp[3][0] = 1.0;
-        temp.matrix = (projection * temp).matrix;
-        float x2 = temp[0][0] / temp[3][0];
-        float y2 = temp[1][0] / temp[3][0];
-        std::cout << x2 << ", " << y2 << std::endl;
-        temp = squares[3];
-        temp[3][0] = 1.0;
-        temp.matrix = (projection * temp).matrix;
-        float x3 = temp[0][0] / temp[3][0];
-        float y3 = temp[1][0] / temp[3][0];
-        std::cout << x3 << ", " << y3 << std::endl;
-        glVertex2f(x, y); glVertex2f( x1,y1);
-        glVertex2f(x1,y1); glVertex2f(x2,y2);
-        glVertex2f(x2,y2); glVertex2f(x3,y3);
-        glVertex2f(x3,y3); glVertex2f(x, y);
+        std::vector<matrice<GLfloat>> points = {{matrice<GLfloat>(3,1)}, {matrice<GLfloat>(3,1)}, {matrice<GLfloat>(3,1)}, {matrice<GLfloat>(3,1)}};
+        for(int i = 0; i < 4; i++)
+            points[i] = squares[i];
+        for(matrice<GLfloat>& point: points)
+        {
+            point[0][0] -= player[0];
+            point[1][0] -= player[1];
+            point[2][0] -= player[2];
+            point.matrix = (rotation * point).matrix;
+            point.addRow({1.0f});
+            point[3][0] = 1.0f;
+            point.matrix = (projection * point).matrix;
+            if(!point[3][0])
+                continue;
+            for(int i = 0; i < 3; i++)
+                point[i][0] /= point[3][0];
+        }
+        draw_line(points[0], points[1]);
+        draw_line(points[1], points[2]);
+        draw_line(points[2], points[3]);
+        draw_line(points[3], points[0]);
     }
-    // degree += 0.1/2;
+    if(mouseY > 1080)
+        mouseY = 1080;
+    else if(mouseY < -1080)
+        mouseY = -1080;
+    glutWarpPointer(MAX_WIDTH/2, MAX_HEIGHT/2);
     glEnd();
-    exit(0);
+    // exit(0);
     glFlush();
 }
 
@@ -117,10 +144,32 @@ void timer(int value)
 }
 
 
+
+void keyboardUp(unsigned char key, int x, int y)
+{
+    if(key == 'w')
+        move[0] = 0;
+    if(key == 's')
+        move[1] = 0;
+    if(key == 'd')
+        move[2] = 0;
+    if(key == 'a')
+        move[3] = 0;
+}
+
 void keyboards(unsigned char key, int x, int y)
 {
     if(key == 27)
         exit(0);
+    if(key == 'w')
+        move[0] = 1;
+    if(key == 's')
+        move[1] = 1;
+
+    if(key == 'd')
+        move[2] = 1;
+    if(key == 'a')
+        move[3] = 1;
 }
 
 int main()
@@ -144,7 +193,9 @@ int main()
     {
         for(std::vector<GLfloat>& plane: squares)
         {
-            plane[2] *= -1;
+            plane[0] *= .5;
+            plane[1] *= .5;
+            plane[2] -= 50;
         }
     }
     int argc = 1;
@@ -152,12 +203,17 @@ int main()
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB); // Set display mode (single buffer, RGB color)
     glutInitWindowSize(glutGet(GLUT_SCREEN_WIDTH), glutGet(GLUT_SCREEN_HEIGHT)); // Set window size (800x600 pixels)
-    glutCreateWindow("Assembly Game"); // Create a window with a title
+    glutCreateWindow("3D Game"); // Create a window with a title
+    glutSetCursor(GLUT_CURSOR_NONE);
+    
     // init();
     // Enter the GLUT event processing loop
     glutDisplayFunc(display);
     glutTimerFunc(0, timer, 0);
     glutKeyboardFunc(keyboards);
+    glutKeyboardUpFunc(keyboardUp);
+    glutPassiveMotionFunc(mouseMove);
+    glutMotionFunc(mouseMove);
     glutMainLoop();
     return 0;
 	

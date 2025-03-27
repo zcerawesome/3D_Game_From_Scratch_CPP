@@ -16,6 +16,7 @@ public:
     matrice(std::vector<std::vector<T>> matrix);
     matrice();
     void toString();
+    void addRow(std::vector<T> row);
     std::vector<T>& operator[](int index);
     void operator=(matrice<T>& inp);
     void operator=(std::vector<std::vector<T>>& inp);
