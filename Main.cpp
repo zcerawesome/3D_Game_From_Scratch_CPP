@@ -54,16 +54,72 @@ void mouseMove(int x, int y)
     }
 }
 
+void its_clipping(matrice<GLfloat>& inside, matrice<GLfloat>& outside, float bound, short axis)
+{
+    float t = (bound - inside[axis][0]) / (outside[axis][0] - inside[axis][0]);
+    for(int i = 0; i < 3; i++)
+        outside[i][0]  = inside[i][0] + t * (outside[i][0] - inside[i][0]);
+}
+
 void draw_line(matrice<GLfloat>& plane1, matrice<GLfloat>& plane2)
 {
-    if((plane1[0][0] > 1 && plane2[0][0] > 1) || (plane1[0][0] < -1 && plane2[0][0] < -1) ||
+    if(( plane1[0][0] > 1 && plane2[0][0] > 1) || (plane1[0][0] < -1 && plane2[0][0] < -1) ||
         (plane1[1][0] > 1 && plane2[1][0] > 1) || (plane1[1][0] < -1 && plane2[1][0] < -1) ||
         (plane1[2][0] > 1 && plane2[2][0] > 1) || (plane1[2][0] < -1 && plane2[2][0] < -1))
         return;
-    std::cout << "Plane 1 " << plane1[1][0] << std::endl;
-    std::cout << "Plane 2 " << plane2[1][0] << std::endl;
+    if((abs(plane1[0][0]) <= 1) && (abs(plane1[1][0]) <= 1) && (abs(plane1[2][0]) <= 1) &&
+        (abs(plane2[0][0]) <= 1) && (abs(plane2[1][0]) <= 1) && (abs(plane2[2][0]) <= 1))
+    {
+        glVertex2f(plane1[0][0], plane1[1][0]);
+        glVertex2f(plane2[0][0], plane2[1][0]);
+        return;
+    }
+
+
+    matrice<GLfloat>& p1 = plane1; 
+    matrice<GLfloat>& p2 = plane2;
+    bool p1Inside = (p1[0][0] >= -1 && p1[0][0] <= 1) && (p1[1][0] >= -1 && p1[1][0] <= 1) && (p1[2][0] >= -1 && p1[2][0] <= 1);
+    bool p2Inside = (p2[0][0] >= -1 && p2[0][0] <= 1) && (p2[1][0] >= -1 && p2[1][0] <= 1) && (p2[2][0] >= -1 && p2[2][0] <= 1);
+
+    // if(plane1[0][0] < -1) its_clipping(plane2, plane1, -1, 0);
+    // if(plane1[0][0] > 1) its_clipping(plane2, plane1, 1, 0);
+    // if(plane2[0][0] < -1) its_clipping(plane1, plane2, -1, 0);
+    // if(plane2[0][0] > 1) its_clipping(plane1, plane2, 1, 0);
+
+    // if(plane1[1][0] < -1) its_clipping(plane2, plane1, -1, 1);
+    // if(plane1[1][0] > 1) its_clipping(plane2, plane1, 1, 1);
+    // if(plane2[1][0] < -1) its_clipping(plane1, plane2, -1, 1);
+    // if(plane2[1][0] > 1) its_clipping(plane1, plane2, 1, 1);
+
+    // if(plane1[2][0] < -1) its_clipping(plane2, plane1, -1, 2);
+    // if(plane1[2][0] > 1) its_clipping(plane2, plane1, 1, 2);
+    // if(plane2[2][0] < -1) its_clipping(plane1, plane2, -1, 2);
+    // if(plane2[2][0] > 1) its_clipping(plane1, plane2, 1, 2);
+    // if(!p1Inside)
+    // {
+    //     if(p1[2][0] < -1) its_clipping(p2, p1, -1, 2);
+    //     else if(p1[2][0] > 1) its_clipping(p2, p1, 1, 2);
+    //     if(p1[0][0] < -1) its_clipping(p2, p1, -1, 0);
+    //     else if(p1[0][0] > 1) its_clipping(p2, p1, 1, 0);
+    //     if(p1[1][0] < -1) its_clipping(p2, p1, -1, 1);
+    //     else if(p1[1][0] > 1) its_clipping(p2, p1, 1, 1);
+    // }
+    // if(!p2Inside)
+    // {
+    //     if(p2[2][0] < -1) its_clipping(p1, p2, -1, 2);
+    //     else if(p2[2][0] > 1) its_clipping(p1, p2, 1, 2);
+    //     if(p2[0][0] < -1) its_clipping(p1, p2, -1, 0);
+    //     else if(p2[0][0] > 1) its_clipping(p1, p2, 1, 0);
+    //     if(p2[1][0] < -1) its_clipping(p1, p2, -1, 1);
+    //     else if(p2[1][0] > 1) its_clipping(p1, p2, 1, 1);
+    // }
+    // std::cout << "Plane 1 " << plane1[0][0] << ",\t" << plane1[1][0]  << " " << rand() << std::endl;
+    // std::cout << "Plane 2 " << plane2[0][0] << ",\t" << plane2[1][0] << std::endl;
+    if(plane1[2][0] < 0 || plane1[2][0] < 0)
+        std::cout << rand() << std::endl;
     glVertex2f(plane1[0][0], plane1[1][0]);
     glVertex2f(plane2[0][0], plane2[1][0]);
+    // std::cout << mouseX << std::endl;
 }
 
 void master_rotation_matrix(matrice<float>& rotation, float x, float y, float z)
@@ -193,8 +249,9 @@ int main()
     {
         for(std::vector<GLfloat>& plane: squares)
         {
-            plane[0] *= .5;
+            plane[0] *= 5;
             plane[1] *= .5;
+            plane[2] *= .5;
             plane[2] -= 50;
         }
     }
