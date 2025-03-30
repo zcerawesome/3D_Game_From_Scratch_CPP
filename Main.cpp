@@ -85,77 +85,16 @@ void draw_line(matrice<GLfloat>& plane1, matrice<GLfloat>& plane2)
     }
 
 
-    // matrice<GLfloat>& p1 = plane1; 
-    // matrice<GLfloat>& p2 = plane2;
-    // bool p1Inside = (p1[0][0] >= -1 && p1[0][0] <= 1) && (p1[1][0] >= -1 && p1[1][0] <= 1) && (p1[2][0] >= -1 && p1[2][0] <= 1);
-    // bool p2Inside = (p2[0][0] >= -1 && p2[0][0] <= 1) && (p2[1][0] >= -1 && p2[1][0] <= 1) && (p2[2][0] >= -1 && p2[2][0] <= 1);
-
-    // if(plane1[0][0] < -1) its_clipping(plane2, plane1, -1, 0);
-    // if(plane1[0][0] > 1) its_clipping(plane2, plane1, 1, 0);
-    // if(plane2[0][0] < -1) its_clipping(plane1, plane2, -1, 0);
-    // if(plane2[0][0] > 1) its_clipping(plane1, plane2, 1, 0);
-
-    // if(plane1[1][0] < -1) its_clipping(plane2, plane1, -1, 1);
-    // if(plane1[1][0] > 1) its_clipping(plane2, plane1, 1, 1);
-    // if(plane2[1][0] < -1) its_clipping(plane1, plane2, -1, 1);
-    // if(plane2[1][0] > 1) its_clipping(plane1, plane2, 1, 1);
-
-    // if(plane1[2][0] < -1) its_clipping(plane2, plane1, -1, 2);
-    // if(plane1[2][0] > 1) its_clipping(plane2, plane1, 1, 2);
-    // if(plane2[2][0] < -1) its_clipping(plane1, plane2, -1, 2);
-    // if(plane2[2][0] > 1) its_clipping(plane1, plane2, 1, 2);
-    // if(!p1Inside)
+    // if(plane1[3][0] < 0)
     // {
-    //     if(p1[2][0] < -1) its_clipping(p2, p1, -1, 2);
-    //     else if(p1[2][0] > 1) its_clipping(p2, p1, 1, 2);
-    //     if(p1[0][0] < -1) its_clipping(p2, p1, -1, 0);
-    //     else if(p1[0][0] > 1) its_clipping(p2, p1, 1, 0);
-    //     if(p1[1][0] < -1) its_clipping(p2, p1, -1, 1);
-    //     else if(p1[1][0] > 1) its_clipping(p2, p1, 1, 1);
+    //     float t = (abs(plane1[0][0]) > abs(plane1[1][0])) ? abs(plane1[1][0]):abs(plane1[0][0]);
+    //     plane1.matrix = (plane1 / -t).matrix;
     // }
-    // if(!p2Inside)
+    // if(plane2[3][0] < 0)
     // {
-    //     if(p2[2][0] < -1) its_clipping(p1, p2, -1, 2);
-    //     else if(p2[2][0] > 1) its_clipping(p1, p2, 1, 2);
-    //     if(p2[0][0] < -1) its_clipping(p1, p2, -1, 0);
-    //     else if(p2[0][0] > 1) its_clipping(p1, p2, 1, 0);
-    //     if(p2[1][0] < -1) its_clipping(p1, p2, -1, 1);
-    //     else if(p2[1][0] > 1) its_clipping(p1, p2, 1, 1);
+    //     float t = (abs(plane2[0][0]) > abs(plane2[1][0])) ? abs(plane2[1][0]):abs(plane2[0][0]);
+    //     plane2.matrix = (plane2 / -t).matrix;
     // }
-    // std::cout << "Plane 1 " << plane1[0][0] << ",\t" << plane1[1][0]  << " " << rand() << std::endl;
-    // std::cout << "Plane 2 " << plane2[0][0] << ",\t" << plane2[1][0] << std::endl;
-    // if(plane1[0][0] > 1 || plane2[0][0] > 1)
-    // {
-    //     std::cout << plane1[2][0] << ", " << plane1[2][0] << ", " << rand() << std::endl;
-    // }
-    // float x1,y1,x2,y2;
-    // x1 = plane1[0][0];
-    // y1 = plane1[1][0];
-    // x2 = plane2[0][0];
-    // y2 = plane2[1][0];
-    // if(plane1[2][0] < -zNear)
-    // {
-    //     float t = (zNear - plane2[2][0]) / (plane1[2][0] - plane2[2][0]);
-    //     x1 = plane2[0][0] + t * (plane1[0][0] - plane2[0][0]);
-    //     y1 = plane2[1][0] + t * (plane1[1][0] - plane2[1][0]);
-    // }
-    // if(plane2[2][0] < -zNear)
-    // {
-    //     float t = (zNear - plane1[2][0]) / (plane2[2][0] - plane1[2][0]);
-    //     x1 = plane1[0][0] + t * (plane2[0][0] - plane1[0][0]);
-    //     y1 = plane1[1][0] + t * (plane2[1][0] - plane1[1][0]);
-    // }
-    // glVertex2f(x1, y1);
-    // glVertex2f(x2, y2);
-    // std::cout << mouseX * M_PI / 2160<< std::endl;
-    if(plane1[3][0] < 0)
-    {
-        plane1.matrix = (plane1 / -1).matrix;
-    }
-    if(plane2[3][0] < 0)
-    {
-        plane2.matrix = (plane2 / -1).matrix;
-    }
     glVertex2f(plane1[0][0], plane1[1][0]);
     glVertex2f(plane2[0][0], plane2[1][0]);
 }
@@ -196,10 +135,13 @@ void display()
                                                                 {0,0, (zFar+zNear)/(zNear-zFar), (2*zFar*zNear)/(zNear-zFar)},
                                                                 {0,0,-1,0}});
     matrice<float> rotation(3,3);
-    master_rotation_matrix(rotation, 0*(mouseY) * M_PI / 2160, (mouseX) * M_PI / 2160, 0);
+    master_rotation_matrix(rotation, (mouseY) * M_PI / 2160, (mouseX) * M_PI / 2160, 0);
     matrice<float> player_pos((std::vector<float>){player[0], player[1], player[2]});
-    for(std::vector<std::vector<GLfloat>>& squares: square)
+    for(int x = 2; x < 3; x++)
     {
+        if(x == 2 || x == 4)
+            continue;
+        std::vector<std::vector<GLfloat>>& squares = square[x];
         std::vector<matrice<GLfloat>> points = {matrice<GLfloat>(3,1), matrice<GLfloat>(3,1), matrice<GLfloat>(3,1), matrice<GLfloat>(3,1)};
         for(int i = 0; i < 4; i++)
             points[i] = squares[i];
@@ -211,59 +153,68 @@ void display()
             point.matrix = (rotation * point).matrix;
             // if(print2)
             //     std::cout << point[0][0] << ", " << point[1][0] << ", " << point[2][0] <<std::endl;
-            // if(printing)
-            // {
-            //     std::cout << point[0][0] << ", " << point[1][0] << ", " << point[2][0] <<std::endl;
-            //     std::cout << "Mouse: " << view_rad(mouseX) << std::endl;
-            // }
+            if(printing)
+            {
+                std::cout << point[0][0] << ", " << point[1][0] << ", " << point[2][0] <<std::endl;
+                std::cout << "Mouse: " << view_rad(mouseX) << std::endl;
+            }
         }
         for(int i = 0; i < points.size(); i++)
         {
+            std::cout << i << std::endl;
             matrice<GLfloat>& p1 = points[i];
-            if(player[2] > p1[2][0])
-                continue;
             matrice<GLfloat>& p2 = (i == points.size()-1) ?points[0]: points[i+1];
-            if(p1[2][0] == p2[2][0] || p1[0][0] == p2[0][0])
+            if((p1[2][0] < 0 && p2[2][0] < 0) || (p1[2][0] > 0 && p2[2][0] > 0))
+            {
+                std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
+                std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
                 continue;
-            
-            float u = (p2[2][0] - p1[2][0])/(p2[0][0] - p1[0][0]);
-            float x = - p1[2][0] + u * p1[0][0];
-            x = x/(u + 1/atan(view_rad(mouseX) + M_PI));
-            // std::cout << "X: " << x << std::endl;
-            // x += 2;
-            // // if(p1.iloc(0) == square[0][3])
-            // p1[2][0] = u * (x - p1[0][0]) - p1[2][0];
-            // p1[0][0] = x;
-            // p1[2][0] /= 5;
-            // p1[1][0] /= 5;
-            // p1[0][0] /= 5;
-            // matrice<GLfloat> p3(3,1);
-            // p3.matrix = (p2 - p1).matrix;
-            // p3.matrix = (p3 / 5.0).matrix;
-            // p1.matrix = (p2 + p3).matrix;
-            // float t = (zNear - p2[2][0]) / (p1[2][0] - p2[2][0]);
-            // p1[0][0] = p2[0][0] + t * (p1[0][0] - p2[0][0]);
-            // p1[1][0] = p2[1][0] + t * (p1[1][0] - p2[1][0]);
-            // p1[2][0] = zNear;
-            // std::cout << p2[2][0] << ", " << view_rad(mouseX) << std::endl;
+            }
+            if(p1[2][0] == p2[2][0] || p1[0][0] == p2[0][0])
+            {
+                std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
+                std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
+                continue;
+            }
+            if(p1[2][0] > p2[2][0])
+            {
+                matrice<GLfloat> point(3,1);
+                point.matrix = (p2 - p1).matrix;
+                float t = (-0.21 - p1[2][0])/point[2][0];
+                point.matrix = (point * t).matrix;
+                p1.matrix = (point + p1).matrix;
+            }
+            else
+            {
+                if(p1.flags.count("Changed"))
+                {
+                    std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\tFailed Second Check" <<std::endl;
+                    std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
+                    continue;
+                }
+                matrice<GLfloat> point(3,1);
+                point.matrix = (p1 - p2).matrix;
+                float t = (-0.2123 - p2[2][0])/point[2][0];
+                point.matrix = (point * t).matrix;
+                p2.matrix = (point + p2).matrix;
+                p2.flags["Changed"] = true;
+            }
+            std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" << rand() <<std::endl;
+            std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
         }
         for(int i = 0; i < points.size(); i++)
         {
             matrice<GLfloat>& point = points[i];
+            point.flags.clear();
             bool printing = (point.iloc(0) == square[0][3]) ? 1: 0;
-            // if(printing)
-            //     std::cout << point[0][0] << ", " <<point[1][0] << ", " << point[2][0] << std::endl;
-            // point[0][0] -= player[0];
-            // point[1][0] -= player[1];
-            // point[2][0] -= player[2];
             point.addRow({1.0f});
             point[3][0] = 1.0f;
             point.matrix = (projection * point).matrix;
             if(!point[3][0])
                 continue;
-            for(int i = 0; i < 3; i++)
+            for(int j = 0; j < 3; j++)
             {
-                point[i][0] /= point[3][0];
+                point[j][0] /= point[3][0];
                 // if(abs(point[i][0]) > point[3][0])
                 //     point[i][0] *= point[3][0] / abs(point[i][0]);
                     // point[i][0] /= point[3][0];
@@ -273,11 +224,12 @@ void display()
         draw_line(points[1], points[2]);
         draw_line(points[2], points[3]);
         draw_line(points[3], points[0]);
+            // break;
     }
-    if(mouseY > 1080)
-        mouseY = 1080;
-    else if(mouseY < -1080)
-        mouseY = -1080;
+    if(mouseY > 1060)
+        mouseY = 1060;
+    else if(mouseY < -1060)
+        mouseY = -1060;
     if(mouse_in)
         glutWarpPointer(MAX_WIDTH/2, MAX_HEIGHT/2);
     glEnd();

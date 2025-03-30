@@ -1,3 +1,6 @@
 ./Physics
 ./Main
 ./a.out
+*.out
+Main
+Physics

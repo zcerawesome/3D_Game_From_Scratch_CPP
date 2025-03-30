@@ -45,6 +45,17 @@ matrice<T> matrice<T>::operator+(matrice<T>& inp)
 }
 
 template <typename T>
+matrice<T> matrice<T>::operator*(T inp)
+{
+    matrice<T> temp(row, col);
+    temp.matrix = matrix;
+    for(std::vector<T>& rows: temp.matrix)
+        for(T& value: rows)
+            value *=  inp;
+    return temp;
+}
+
+template <typename T>
 matrice<T> matrice<T>::operator/(T inp)
 {
     matrice<T> temp(row, col);
@@ -87,6 +98,12 @@ matrice<T>::matrice(int row, int col): row(row), col(col)
 }
 
 
+template <typename T>
+void matrice<T>::removeRow()
+{
+    row--;
+    matrix.pop_back();
+}
 template <typename T>
 void matrice<T>::addRow(std::vector<T> inprow)
 {
