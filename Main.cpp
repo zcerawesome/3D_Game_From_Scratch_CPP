@@ -63,13 +63,6 @@ void mouseMove(int x, int y)
     }
 }
 
-void its_clipping(matrice<GLfloat>& inside, matrice<GLfloat>& outside, float bound, short axis)
-{
-    float t = (bound - inside[axis][0]) / (outside[axis][0] - inside[axis][0]);
-    for(int i = 0; i < 3; i++)
-        outside[i][0]  = inside[i][0] + t * (outside[i][0] - inside[i][0]);
-}
-
 void draw_line(matrice<GLfloat>& plane1, matrice<GLfloat>& plane2)
 {
     if(( plane1[0][0] > 1 && plane2[0][0] > 1) || (plane1[0][0] < -1 && plane2[0][0] < -1) ||
@@ -110,6 +103,17 @@ void master_rotation_matrix(matrice<float>& rotation, float x, float y, float z)
     rotation.matrix = (x_rotation * y_rotation * z_rotation).matrix;
 }
 
+int circular_index(int rel, int max)
+{
+    if(rel < 0)
+        return max + rel % max;
+    if(rel < max) 
+        return rel;
+    if(rel >= max)
+        return rel % max;
+    return -1;
+}
+
 void display()
 {
     glClear(GL_COLOR_BUFFER_BIT);
@@ -135,15 +139,16 @@ void display()
                                                                 {0,0, (zFar+zNear)/(zNear-zFar), (2*zFar*zNear)/(zNear-zFar)},
                                                                 {0,0,-1,0}});
     matrice<float> rotation(3,3);
+    // mouseX = 2160/2;
     master_rotation_matrix(rotation, (mouseY) * M_PI / 2160, (mouseX) * M_PI / 2160, 0);
     matrice<float> player_pos((std::vector<float>){player[0], player[1], player[2]});
-    for(int x = 2; x < 3; x++)
+    for(int x = 4; x < 5; x++)
     {
-        if(x == 2 || x == 4)
+        if(x == 3)
             continue;
         std::vector<std::vector<GLfloat>>& squares = square[x];
         std::vector<matrice<GLfloat>> points = {matrice<GLfloat>(3,1), matrice<GLfloat>(3,1), matrice<GLfloat>(3,1), matrice<GLfloat>(3,1)};
-        for(int i = 0; i < 4; i++)
+        for(int i = 0; i < squares.size(); i++)
             points[i] = squares[i];
         for(matrice<GLfloat>& point: points)
         {
@@ -155,60 +160,94 @@ void display()
             //     std::cout << point[0][0] << ", " << point[1][0] << ", " << point[2][0] <<std::endl;
             if(printing)
             {
-                std::cout << point[0][0] << ", " << point[1][0] << ", " << point[2][0] <<std::endl;
-                std::cout << "Mouse: " << view_rad(mouseX) << std::endl;
+                // std::cout << point[0][0] << ", " << point[1][0] << ", " << point[2][0] <<std::endl;
+                // std::cout << "Mouse: " << view_rad(mouseX) << std::endl;
             }
         }
         for(int i = 0; i < points.size(); i++)
         {
+            // continue;
             std::cout << i << std::endl;
-            matrice<GLfloat>& p1 = points[i];
-            matrice<GLfloat>& p2 = (i == points.size()-1) ?points[0]: points[i+1];
-            if((p1[2][0] < 0 && p2[2][0] < 0) || (p1[2][0] > 0 && p2[2][0] > 0))
+            matrice<GLfloat>& p0 = points[circular_index(i - 1, points.size())];
+            matrice<GLfloat>& p1 = points[circular_index(i, points.size())];
+            matrice<GLfloat>& p2 = points[circular_index(i + 1, points.size())];
+            std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
+            // std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
+            // std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
+            if(p1[2][0] < 0 || (p0[2][0] < 0 && p1[2][0] < 0 && p2[2][0] < 0) || (p0[2][0] > 0 && p1[2][0] > 0 && p2[2][0] > 0))
             {
-                std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
-                std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
+                // std::cout << "p0 " <<  p0[0][0] << ", " << p0[1][0] << ", " << p0[2][0] << "\t" <<std::endl;
+                // std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
                 continue;
             }
-            if(p1[2][0] == p2[2][0] || p1[0][0] == p2[0][0])
+            // if(p1[2][0] > p2[2][0])
+            // {
+            //     matrice<GLfloat> point(3,1);
+            //     point.matrix = (p2 - p1).matrix;
+            //     float t = (-0.01 - p1[2][0])/point[2][0];
+            //     point.matrix = (point * t).matrix;
+            //     p1.matrix = (point + p1).matrix;
+            // }
+            // else
+            // {
+            //     if(p1[2][0] >= -0.01)
+            //     {
+            //         std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\tFailed Second Check" <<std::endl;
+            //         std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
+            //         continue;
+            //     }
+            //     matrice<GLfloat> point(3,1);
+            //     point.matrix = (p1 - p2).matrix;
+            //     float t = (-0.0123 - p2[2][0])/point[2][0];
+            //     point.matrix = (point * t).matrix;
+            //     p2.matrix = (point + p2).matrix;
+            //     // if(p1[1][0] != p2[1][0])
+            //         // p2.flags["Changed"] = true;
+            // }
+            if(p2[2][0] < 0 && p0[2][0] < 0)
             {
-                std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
-                std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
-                continue;
+                matrice<GLfloat> temp = p1;
+                matrice<GLfloat> point(3,1);
+                point.matrix = (p0 - p1).matrix;
+                float t = (-0.01 - p1[2][0])/point[2][0];
+                point.matrix = (point * t).matrix;
+                p1.matrix = (point + p1).matrix;
+
+                point.matrix = (p2 - temp).matrix;
+                t = (-0.01 - temp[2][0])/point[2][0];
+                point.matrix = (point * t).matrix;
+                temp.matrix = (point + temp).matrix;
+                points.insert(points.begin() + i+1, temp);
             }
-            if(p1[2][0] > p2[2][0])
+            else if(p0[2][0] > 0 && p2[2][0] < 0)
             {
                 matrice<GLfloat> point(3,1);
                 point.matrix = (p2 - p1).matrix;
-                float t = (-0.21 - p1[2][0])/point[2][0];
+                float t = (-0.01 - p1[2][0])/point[2][0];
                 point.matrix = (point * t).matrix;
                 p1.matrix = (point + p1).matrix;
             }
-            else
+            else if(p2[2][0] > 0 && p0[2][0] < 0)
             {
-                if(p1.flags.count("Changed"))
-                {
-                    std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\tFailed Second Check" <<std::endl;
-                    std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
-                    continue;
-                }
                 matrice<GLfloat> point(3,1);
-                point.matrix = (p1 - p2).matrix;
-                float t = (-0.2123 - p2[2][0])/point[2][0];
+                point.matrix = (p0 - p1).matrix;
+                float t = (-0.01 - p1[2][0])/point[2][0];
                 point.matrix = (point * t).matrix;
-                p2.matrix = (point + p2).matrix;
-                p2.flags["Changed"] = true;
+                p1.matrix = (point + p1).matrix;
             }
-            std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" << rand() <<std::endl;
-            std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
+            // std::cout << points[i][0][0] << ", " << points[i][1][0] << ", " <<points[i][2][0] << std::endl;
+            // std::cout << "p0 " <<  p0[0][0] << ", " << p0[1][0] << ", " << p0[2][0] << "\t" << rand() <<std::endl;
+            // std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
+            // std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
         }
+        // for(matrice<GLfloat>& p1: points)
+        //     std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
         for(int i = 0; i < points.size(); i++)
         {
             matrice<GLfloat>& point = points[i];
             point.flags.clear();
             bool printing = (point.iloc(0) == square[0][3]) ? 1: 0;
             point.addRow({1.0f});
-            point[3][0] = 1.0f;
             point.matrix = (projection * point).matrix;
             if(!point[3][0])
                 continue;
@@ -220,10 +259,8 @@ void display()
                     // point[i][0] /= point[3][0];
             }
         }
-        draw_line(points[0], points[1]);
-        draw_line(points[1], points[2]);
-        draw_line(points[2], points[3]);
-        draw_line(points[3], points[0]);
+        for(int i = 0; i < points.size(); i++)
+            draw_line(points[i], points[(i == points.size()-1) ? 0: i+1]);
             // break;
     }
     if(mouseY > 1060)
@@ -287,6 +324,13 @@ int main()
         std::vector<std::vector<int>> temp_ve = {{3,4,5},{0,1,2}};
         test2 = temp_ve;
         // test2.toString();
+        std::vector<matrice<GLfloat>> temp = {matrice<GLfloat>(3,1), matrice<GLfloat>(3,1)};
+        // temp.insert(temp.begin(), 3);
+        for(int i = 0; i < temp.size(); i++)
+        {
+            if(i == 1)
+                temp.insert(temp.begin() + i + 1, matrice<GLfloat>(3,1));
+        }
         return 0;
     }
     for(std::vector<std::vector<GLfloat>>& squares: square)

@@ -140,7 +140,7 @@ void matrice<T>::operator=(std::vector<std::vector<T>>& inp)
 }
 
 template <typename T>
-void matrice<T>::operator=(matrice<T>& inp)
+void matrice<T>::operator=(matrice<T> inp)
 {
     matrix = inp.matrix;
 }
