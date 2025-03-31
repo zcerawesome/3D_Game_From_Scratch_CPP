@@ -28,6 +28,11 @@ std::vector<std::vector<std::vector<GLfloat>>> square({{{10,10,10}, {10, -10, 10
                                                         {{-10, 10, 10}, {-10, 10, -10}, {-10, -10, -10}, {-10, -10, 10}},
                                                         {{-10, -10, 10}, {-10,-10,-10}, {10, -10, -10}, {10, -10, 10}},
                                                         {{-10,-10,-10}, {-10, 10, -10}, {10, 10, -10}, {10, -10, -10}}});
+std::vector<std::vector<std::vector<GLfloat>>> triangle({{{0,10,50}, {-5, -10,45}, {5,-10,45}},
+                                                        {{0,10, 50}, {5, -10, 45}, {5, -10, 55}},
+                                                        {{0,10,50}, {5, -10, 55}, {-5, -10, 55}}, 
+                                                        {{0,10,50}, {-5,-10,55}, {-5,-10,45}},
+                                                        {{-5, -10, 45}, {5, -10, 45}, {5, -10, 55}, {-5,-10, 55}}});
 
 float FOV = M_PI / 3;
 float zNear = 0.1;
@@ -142,68 +147,26 @@ void display()
     // mouseX = 2160/2;
     master_rotation_matrix(rotation, (mouseY) * M_PI / 2160, (mouseX) * M_PI / 2160, 0);
     matrice<float> player_pos((std::vector<float>){player[0], player[1], player[2]});
-    for(int x = 4; x < 5; x++)
+    for(std::vector<std::vector<GLfloat>>& squares: triangle)
     {
-        if(x == 3)
-            continue;
-        std::vector<std::vector<GLfloat>>& squares = square[x];
-        std::vector<matrice<GLfloat>> points = {matrice<GLfloat>(3,1), matrice<GLfloat>(3,1), matrice<GLfloat>(3,1), matrice<GLfloat>(3,1)};
+        std::vector<matrice<GLfloat>> points;
         for(int i = 0; i < squares.size(); i++)
-            points[i] = squares[i];
+            points.push_back(squares[i]);
         for(matrice<GLfloat>& point: points)
         {
             bool printing = (point.iloc(0) == square[0][3]) ? 1:0;
             bool print2 = (point.iloc(0) == square[0][0]) ? 1:0;
             point.matrix = (point - player_pos).matrix;
             point.matrix = (rotation * point).matrix;
-            // if(print2)
-            //     std::cout << point[0][0] << ", " << point[1][0] << ", " << point[2][0] <<std::endl;
-            if(printing)
-            {
-                // std::cout << point[0][0] << ", " << point[1][0] << ", " << point[2][0] <<std::endl;
-                // std::cout << "Mouse: " << view_rad(mouseX) << std::endl;
-            }
         }
-        for(int i = 0; i < points.size(); i++)
+        for(int i = 0; i < points.size()+1; i++)
         {
             // continue;
-            std::cout << i << std::endl;
             matrice<GLfloat>& p0 = points[circular_index(i - 1, points.size())];
             matrice<GLfloat>& p1 = points[circular_index(i, points.size())];
             matrice<GLfloat>& p2 = points[circular_index(i + 1, points.size())];
-            std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
-            // std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
-            // std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
             if(p1[2][0] < 0 || (p0[2][0] < 0 && p1[2][0] < 0 && p2[2][0] < 0) || (p0[2][0] > 0 && p1[2][0] > 0 && p2[2][0] > 0))
-            {
-                // std::cout << "p0 " <<  p0[0][0] << ", " << p0[1][0] << ", " << p0[2][0] << "\t" <<std::endl;
-                // std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
                 continue;
-            }
-            // if(p1[2][0] > p2[2][0])
-            // {
-            //     matrice<GLfloat> point(3,1);
-            //     point.matrix = (p2 - p1).matrix;
-            //     float t = (-0.01 - p1[2][0])/point[2][0];
-            //     point.matrix = (point * t).matrix;
-            //     p1.matrix = (point + p1).matrix;
-            // }
-            // else
-            // {
-            //     if(p1[2][0] >= -0.01)
-            //     {
-            //         std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\tFailed Second Check" <<std::endl;
-            //         std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
-            //         continue;
-            //     }
-            //     matrice<GLfloat> point(3,1);
-            //     point.matrix = (p1 - p2).matrix;
-            //     float t = (-0.0123 - p2[2][0])/point[2][0];
-            //     point.matrix = (point * t).matrix;
-            //     p2.matrix = (point + p2).matrix;
-            //     // if(p1[1][0] != p2[1][0])
-            //         // p2.flags["Changed"] = true;
-            // }
             if(p2[2][0] < 0 && p0[2][0] < 0)
             {
                 matrice<GLfloat> temp = p1;
@@ -213,11 +176,15 @@ void display()
                 point.matrix = (point * t).matrix;
                 p1.matrix = (point + p1).matrix;
 
+                if(i != points.size())
+                {
                 point.matrix = (p2 - temp).matrix;
                 t = (-0.01 - temp[2][0])/point[2][0];
                 point.matrix = (point * t).matrix;
                 temp.matrix = (point + temp).matrix;
                 points.insert(points.begin() + i+1, temp);
+
+                }
             }
             else if(p0[2][0] > 0 && p2[2][0] < 0)
             {
@@ -235,32 +202,20 @@ void display()
                 point.matrix = (point * t).matrix;
                 p1.matrix = (point + p1).matrix;
             }
-            // std::cout << points[i][0][0] << ", " << points[i][1][0] << ", " <<points[i][2][0] << std::endl;
-            // std::cout << "p0 " <<  p0[0][0] << ", " << p0[1][0] << ", " << p0[2][0] << "\t" << rand() <<std::endl;
-            // std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
-            // std::cout << "p2 "<< p2[0][0] << ", " << p2[1][0] << ", " << p2[2][0] <<std::endl;
         }
-        // for(matrice<GLfloat>& p1: points)
-        //     std::cout << "p1 " <<  p1[0][0] << ", " << p1[1][0] << ", " << p1[2][0] << "\t" <<std::endl;
         for(int i = 0; i < points.size(); i++)
         {
             matrice<GLfloat>& point = points[i];
-            point.flags.clear();
             bool printing = (point.iloc(0) == square[0][3]) ? 1: 0;
             point.addRow({1.0f});
             point.matrix = (projection * point).matrix;
             if(!point[3][0])
                 continue;
             for(int j = 0; j < 3; j++)
-            {
                 point[j][0] /= point[3][0];
-                // if(abs(point[i][0]) > point[3][0])
-                //     point[i][0] *= point[3][0] / abs(point[i][0]);
-                    // point[i][0] /= point[3][0];
-            }
         }
         for(int i = 0; i < points.size(); i++)
-            draw_line(points[i], points[(i == points.size()-1) ? 0: i+1]);
+            draw_line(points[i], points[circular_index(i+1, points.size())]);
             // break;
     }
     if(mouseY > 1060)
@@ -269,6 +224,7 @@ void display()
         mouseY = -1060;
     if(mouse_in)
         glutWarpPointer(MAX_WIDTH/2, MAX_HEIGHT/2);
+    mouseX %= 2160*2;
     glEnd();
     // exit(0);
     glFlush();
@@ -324,13 +280,19 @@ int main()
         std::vector<std::vector<int>> temp_ve = {{3,4,5},{0,1,2}};
         test2 = temp_ve;
         // test2.toString();
-        std::vector<matrice<GLfloat>> temp = {matrice<GLfloat>(3,1), matrice<GLfloat>(3,1)};
-        // temp.insert(temp.begin(), 3);
-        for(int i = 0; i < temp.size(); i++)
-        {
-            if(i == 1)
-                temp.insert(temp.begin() + i + 1, matrice<GLfloat>(3,1));
-        }
+        // std::vector<matrice<GLfloat>> temp = {matrice<GLfloat>(3,1), matrice<GLfloat>(3,1)};
+        // // temp.insert(temp.begin(), 3);
+        // for(int i = 0; i < temp.size(); i++)
+        // {
+        //     if(i == 1)
+        //         temp.insert(temp.begin() + i + 1, matrice<GLfloat>(3,1));
+        // }
+        for(int i = 0; i < 4; i++)
+            std::cout << circular_index(i-1, 3) << std::endl;
+        for(int i = 0; i < 4; i++)
+            std::cout << circular_index(i, 3) << std::endl;
+        for(int i = 0; i < 4; i++)
+            std::cout << circular_index(i+1, 3) << std::endl;
         return 0;
     }
     for(std::vector<std::vector<GLfloat>>& squares: square)
@@ -343,6 +305,14 @@ int main()
             plane[2] -= 50;
         }
     }
+    for(std::vector<std::vector<GLfloat>>& squares: triangle)
+    {
+        for(std::vector<GLfloat>& plane: squares)
+        {
+            plane[2] *= -1;
+        }
+    }
+    
     int argc = 1;
     char* argv[] = {(char*)"my_program"};
     glutInit(&argc, argv);

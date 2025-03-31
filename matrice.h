@@ -1,7 +1,6 @@
 #ifndef MATRICE_H
 #define MATRICE_H
 #include <vector>
-#include <unordered_map>
 #include <iostream>
 
 template <typename T>
@@ -10,7 +9,6 @@ class matrice
 private:
     int row, col;
 public:
-    std::unordered_map<std::string, bool> flags;
     std::vector<std::vector<T>> matrix;
     int size();
     matrice(int row, int col);
