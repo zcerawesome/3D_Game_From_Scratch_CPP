@@ -8,6 +8,7 @@ public:
     float x,y,z;
     float x_degree, y_degree, z_degree;
     float x_vel = 0, y_vel=0, z_vel=0;
+    float x_acc = 0, y_acc=0.01, z_acc=0;
     std::vector<std::vector<std::vector<float>>> vertices;
     Entity(float x, float y, float z);
     Entity(float x, float y, float z, float x_degree, float y_degree, float z_degree);

@@ -11,9 +11,6 @@ void Entity::update()
     x += x_vel;
     y += y_vel;
     z += z_vel;
-    x_vel = 0;
-    y_vel = 0;
-    z_vel = 0;
 }
 
 float& Entity::operator[](int index)

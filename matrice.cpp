@@ -1,6 +1,15 @@
 #include "matrice.h"
 
 template <typename T>
+matrice<T>::matrice(std::vector<T>& matrix): row(matrix.size()), col(1)
+{
+    this->matrix = std::vector<std::vector<T>>(row);
+    for (auto& typestuff: this->matrix)
+        typestuff.resize(col);
+    *this = matrix;
+}
+
+template <typename T>
 matrice<T>::matrice(std::vector<T> matrix): row(matrix.size()), col(1)
 {
     this->matrix = std::vector<std::vector<T>>(row);
@@ -8,6 +17,10 @@ matrice<T>::matrice(std::vector<T> matrix): row(matrix.size()), col(1)
         typestuff.resize(col);
     *this = matrix;
 }
+
+template <typename T>
+matrice<T>::matrice(std::vector<std::vector<T>>& matrix): matrix(matrix), row(matrix.size()), col(matrix[0].size())
+{}
 
 template <typename T>
 matrice<T>::matrice(std::vector<std::vector<T>> matrix): matrix(matrix), row(matrix.size()), col(matrix[0].size())

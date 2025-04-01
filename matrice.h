@@ -14,6 +14,8 @@ public:
     matrice(int row, int col);
     matrice(std::vector<std::vector<T>> matrix);
     matrice(std::vector<T> matrix);
+    matrice(std::vector<std::vector<T>>& matrix);
+    matrice(std::vector<T>& matrix);
     matrice();
     void toString();
     void addRow(std::vector<T> row);

@@ -46,7 +46,7 @@ int mouseX, mouseY;
 
 
 Entity player(0,0,0,0,0,0);
-bool move[4] = {0,0,0,0};
+bool move[5] = {0,0,0,0,0};
 bool mouse_in = true;
 void mouseEntry(int state)
 {
@@ -85,31 +85,13 @@ void draw_line(matrice<GLfloat>& plane1, matrice<GLfloat>& plane2)
     }
 
 
-    // if(plane1[3][0] < 0)
-    // {
-    //     float t = (abs(plane1[0][0]) > abs(plane1[1][0])) ? abs(plane1[1][0]):abs(plane1[0][0]);
-    //     plane1.matrix = (plane1 / -t).matrix;
-    // }
-    // if(plane2[3][0] < 0)
-    // {
-    //     float t = (abs(plane2[0][0]) > abs(plane2[1][0])) ? abs(plane2[1][0]):abs(plane2[0][0]);
-    //     plane2.matrix = (plane2 / -t).matrix;
-    // }
-    // std::cout << ++counter << std::endl;
-    // counter++;
-    // if(counter == 48)
-    // {
-    //     std::cout << plane1[0][0] << ", " <<  plane1[1][0] << std::endl;
-    //     std::cout << plane2[0][0] << ", " <<  plane2[1][0] << std::endl;
-    // }
     glVertex2f(plane1[0][0], plane1[1][0]);
     glVertex2f(plane2[0][0], plane2[1][0]);
-    // std::cout << counter << std::endl;
 }
 
 void master_rotation_matrix(matrice<float>& rotation, float x, float y, float z)
 {
-    matrice<float> x_rotation(3,3);
+    matrice<float> x_rotation({{1,0,0}, {0, cos(x), -sin(x)}, {0, sin(x), cos(x)}});
     matrice<float> y_rotation(3,3);
     matrice<float> z_rotation(3,3);
     x_rotation.matrix = {{1,0,0}, {0, cos(x), -sin(x)}, {0, sin(x), cos(x)}};
@@ -137,6 +119,10 @@ void display()
     // Begin drawing a polygon (in this case, a square)
     float forward = 0;
     float right = 0;
+    if(!move[0] || !move[1])
+        forward = 0;
+    if(!move[2] || !move[3])
+        right = 0;
     if(move[0])
         forward = -.2;
     else if(move[1])
@@ -145,24 +131,24 @@ void display()
         right = .2;
     else if(move[3])
         right = -.2;
-    
-    player.z_vel += forward * cos(view_rad(mouseX))  + right * sin(view_rad(mouseX));
-    player.x_vel += -forward * sin(view_rad(mouseX)) + right * cos(view_rad(mouseX));
+    if(move[4] && player[1] == 0)
+        player.y_vel = 0.3;
+    player.z_vel = forward * cos(view_rad(mouseX))  + right * sin(view_rad(mouseX));
+    player.x_vel = -forward * sin(view_rad(mouseX)) + right * cos(view_rad(mouseX));
     player.update();
-    matrice<GLfloat> projection((std::vector<std::vector<float>>){{1.0f / (aspect * tan(FOV/2)), 0,0,0}, 
+    matrice<GLfloat> projection({{1.0f / (aspect * tan(FOV/2)), 0,0,0}, 
                                                                 {0, 1.0f/(tan(FOV/2)), 0,0},
                                                                 {0,0, (zFar+zNear)/(zNear-zFar), (2*zFar*zNear)/(zNear-zFar)},
                                                                 {0,0,-1,0}});
     matrice<float> rotation(3,3);
-    // mouseX = 2160/2;
     master_rotation_matrix(rotation, (mouseY) * M_PI / 2160, (mouseX) * M_PI / 2160, 0);
-    matrice<float> player_pos((std::vector<float>){player[0], player[1], player[2]});
+    matrice<float> player_pos({player[0], player[1], player[2]});
     for(int x = 0; x < new_square.size(); x++)
     {
         std::vector<std::vector<GLfloat>>& squares= new_square[x]; 
         std::vector<matrice<GLfloat>> points;
         for(int i = 0; i < squares.size(); i++)
-            points.push_back(squares[i]);
+            points.push_back((std::vector<GLfloat>)squares[i]);
         for(matrice<GLfloat>& point: points)
         {
             bool printing = (point.iloc(0) == square[0][3]) ? 1:0;
@@ -172,7 +158,6 @@ void display()
         }
         for(int i = 0; i < points.size()+1; i++)
         {
-            // continue;
             matrice<GLfloat>& p0 = points[circular_index(i - 1, points.size())];
             matrice<GLfloat>& p1 = points[circular_index(i, points.size())];
             matrice<GLfloat>& p2 = points[circular_index(i + 1, points.size())];
@@ -234,6 +219,15 @@ void display()
     if(mouse_in)
         glutWarpPointer(MAX_WIDTH/2, MAX_HEIGHT/2);
     mouseX %= 2160*2;
+    if(player[1] > 0)
+    {
+        player.y_vel -= player.y_acc;
+        if(player[1] + player.y_vel <= 0)
+        {
+            player[1] = 0;
+            player.y_vel = 0;
+        }
+    }
     glEnd();
     // exit(0);
     glFlush();
@@ -248,14 +242,14 @@ void timer(int value)
 
 void handleSpecialKeyPressUp(int key, int x, int y)
 {
-    for(int i = 0; i < 4; i++)
-        move[i] = 0;
+    *(int*)move = 0;
+    move[4] = 0;
 }
 
 void handleSpecialKeyPress(int key, int x, int y)
 {
-    for(int i = 0; i < 4; i++)
-        move[i] = 0;
+    *(int*)move = 0;
+    move[4] = 0;
 }
 
 void keyboardUp(unsigned char key, int x, int y)
@@ -268,6 +262,8 @@ void keyboardUp(unsigned char key, int x, int y)
         move[2] = 0;
     if(key == 'a')
         move[3] = 0;
+    if(key == ' ')
+        move[4] = 0;
 }
 
 void keyboards(unsigned char key, int x, int y)
@@ -283,6 +279,9 @@ void keyboards(unsigned char key, int x, int y)
         move[2] = 1;
     if(key == 'a')
         move[3] = 1;
+    if(key == ' ')
+        move[4] = 1;
+
 }
 
 int main()
@@ -307,12 +306,6 @@ int main()
         //     if(i == 1)
         //         temp.insert(temp.begin() + i + 1, matrice<GLfloat>(3,1));
         // }
-        for(int i = 0; i < 4; i++)
-            std::cout << circular_index(i-1, 3) << std::endl;
-        for(int i = 0; i < 4; i++)
-            std::cout << circular_index(i, 3) << std::endl;
-        for(int i = 0; i < 4; i++)
-            std::cout << circular_index(i+1, 3) << std::endl;
         return 0;
     }
     for(std::vector<std::vector<GLfloat>>& squares: square)
