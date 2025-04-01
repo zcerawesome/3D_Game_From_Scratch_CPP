@@ -24,6 +24,7 @@ public:
     matrice<T> operator/(T inp);
     matrice<T> operator*(T inp);
     matrice<T> operator+(matrice<T>& inp);
+    void operator=(matrice<T>& inp);
     void operator=(matrice<T> inp);
     void operator=(std::vector<std::vector<T>>& inp);
     void operator=(std::vector<T>& inp);

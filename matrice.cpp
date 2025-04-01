@@ -145,6 +145,13 @@ void matrice<T>::operator=(matrice<T> inp)
     matrix = inp.matrix;
 }
 
+
+template <typename T>
+void matrice<T>::operator=(matrice<T>& inp)
+{
+    matrix = inp.matrix;
+}
+
 template <typename T>
 matrice<T> matrice<T>::operator*(matrice<T>& inp)
 {

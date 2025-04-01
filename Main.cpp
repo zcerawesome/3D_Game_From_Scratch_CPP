@@ -2,6 +2,8 @@
 #include <math.h>
 #include <GL/glut.h>
 #include <vector>
+#include <fstream>
+#include <sstream>
 #include "matrice.h"
 #include "Object.h"
 #include "Entity.h"
@@ -33,7 +35,7 @@ std::vector<std::vector<std::vector<GLfloat>>> triangle({{{0,10,50}, {-5, -10,45
                                                         {{0,10,50}, {5, -10, 55}, {-5, -10, 55}}, 
                                                         {{0,10,50}, {-5,-10,55}, {-5,-10,45}},
                                                         {{-5, -10, 45}, {5, -10, 45}, {5, -10, 55}, {-5,-10, 55}}});
-
+std::vector<std::vector<std::vector<GLfloat>>> new_square;
 float FOV = M_PI / 3;
 float zNear = 0.1;
 float zFar = 1000.0;
@@ -67,7 +69,7 @@ void mouseMove(int x, int y)
         initial[1] = MAX_HEIGHT/2;
     }
 }
-
+int counter = 0;
 void draw_line(matrice<GLfloat>& plane1, matrice<GLfloat>& plane2)
 {
     if(( plane1[0][0] > 1 && plane2[0][0] > 1) || (plane1[0][0] < -1 && plane2[0][0] < -1) ||
@@ -93,8 +95,16 @@ void draw_line(matrice<GLfloat>& plane1, matrice<GLfloat>& plane2)
     //     float t = (abs(plane2[0][0]) > abs(plane2[1][0])) ? abs(plane2[1][0]):abs(plane2[0][0]);
     //     plane2.matrix = (plane2 / -t).matrix;
     // }
+    // std::cout << ++counter << std::endl;
+    // counter++;
+    // if(counter == 48)
+    // {
+    //     std::cout << plane1[0][0] << ", " <<  plane1[1][0] << std::endl;
+    //     std::cout << plane2[0][0] << ", " <<  plane2[1][0] << std::endl;
+    // }
     glVertex2f(plane1[0][0], plane1[1][0]);
     glVertex2f(plane2[0][0], plane2[1][0]);
+    // std::cout << counter << std::endl;
 }
 
 void master_rotation_matrix(matrice<float>& rotation, float x, float y, float z)
@@ -147,8 +157,9 @@ void display()
     // mouseX = 2160/2;
     master_rotation_matrix(rotation, (mouseY) * M_PI / 2160, (mouseX) * M_PI / 2160, 0);
     matrice<float> player_pos((std::vector<float>){player[0], player[1], player[2]});
-    for(std::vector<std::vector<GLfloat>>& squares: triangle)
+    for(int x = 0; x < new_square.size(); x++)
     {
+        std::vector<std::vector<GLfloat>>& squares= new_square[x]; 
         std::vector<matrice<GLfloat>> points;
         for(int i = 0; i < squares.size(); i++)
             points.push_back(squares[i]);
@@ -178,12 +189,11 @@ void display()
 
                 if(i != points.size())
                 {
-                point.matrix = (p2 - temp).matrix;
-                t = (-0.01 - temp[2][0])/point[2][0];
-                point.matrix = (point * t).matrix;
-                temp.matrix = (point + temp).matrix;
-                points.insert(points.begin() + i+1, temp);
-
+                    point.matrix = (p2 - temp).matrix;
+                    t = (-0.01 - temp[2][0])/point[2][0];
+                    point.matrix = (point * t).matrix;
+                    temp.matrix = (point + temp).matrix;
+                    points.insert(points.begin() + i+1, temp);
                 }
             }
             else if(p0[2][0] > 0 && p2[2][0] < 0)
@@ -216,7 +226,6 @@ void display()
         }
         for(int i = 0; i < points.size(); i++)
             draw_line(points[i], points[circular_index(i+1, points.size())]);
-            // break;
     }
     if(mouseY > 1060)
         mouseY = 1060;
@@ -237,6 +246,17 @@ void timer(int value)
 }
 
 
+void handleSpecialKeyPressUp(int key, int x, int y)
+{
+    for(int i = 0; i < 4; i++)
+        move[i] = 0;
+}
+
+void handleSpecialKeyPress(int key, int x, int y)
+{
+    for(int i = 0; i < 4; i++)
+        move[i] = 0;
+}
 
 void keyboardUp(unsigned char key, int x, int y)
 {
@@ -312,7 +332,61 @@ int main()
             plane[2] *= -1;
         }
     }
-    
+    std::ifstream file("First_Cube.obj");
+
+    if(!file.is_open())
+        std::cerr << "Unable to open file" << std::endl;
+
+    std::vector<std::vector<GLfloat>> Vertexes;
+    std::vector<std::vector<int>> Face;
+    std::string line;
+    while(std::getline(file, line))
+    {
+        std::stringstream ss(line);
+        std::string prefix;
+        ss >> prefix;
+        if(prefix == "v")
+        {
+            std::vector<GLfloat> temp(3);
+            ss >> temp[0] >> temp[1] >> temp[2];
+            Vertexes.push_back(temp);
+        }
+        else if(prefix == "f")
+        {
+            std::string vData;
+            std::vector<int> FaceInst;
+            while(ss >> vData)
+            {
+                std::stringstream vss(vData);
+                std::string value;
+                int indices[3] = {0,0,0};
+                for(int i =0; std::getline(vss, value, '/'); i++)
+                    if(!value.empty()) indices[i] = std::stoi(value);
+                FaceInst.push_back(indices[0] -1);
+            }
+            Face.push_back(FaceInst);
+        }
+        else
+            std::getline(file, line);
+    }
+    for(int i = 0; i < Face.size(); i++)
+    {
+        std::vector<std::vector<GLfloat>>& v = Vertexes;
+        std::vector<std::vector<GLfloat>> temp_2D;
+        for(int j =0; j < Face[i].size(); j++)
+        {
+            temp_2D.push_back(v[Face[i][j]]);    
+        }
+        new_square.push_back(temp_2D);
+    }
+    for(auto& square: new_square)
+    {
+        for(auto& row: square)
+        {
+            
+            row[2] -= 40;
+        }
+    }
     int argc = 1;
     char* argv[] = {(char*)"my_program"};
     glutInit(&argc, argv);
@@ -327,6 +401,8 @@ int main()
     glutTimerFunc(0, timer, 0);
     glutKeyboardFunc(keyboards);
     glutKeyboardUpFunc(keyboardUp);
+    glutSpecialFunc(handleSpecialKeyPress);
+    glutSpecialUpFunc(handleSpecialKeyPressUp);
     glutPassiveMotionFunc(mouseMove);
     glutEntryFunc(mouseEntry);
     glutMotionFunc(mouseMove);
