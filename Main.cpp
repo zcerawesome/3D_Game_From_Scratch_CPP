@@ -10,6 +10,11 @@
 
 #define view_rad(x) x * M_PI / 2160
 
+struct pos
+{
+    float x,y,z;
+};
+
 GLfloat abs_to_float_x(int input)
 {
     input -= 1920/2;
@@ -35,7 +40,11 @@ std::vector<std::vector<std::vector<GLfloat>>> triangle({{{0,10,50}, {-5, -10,45
                                                         {{0,10,50}, {5, -10, 55}, {-5, -10, 55}}, 
                                                         {{0,10,50}, {-5,-10,55}, {-5,-10,45}},
                                                         {{-5, -10, 45}, {5, -10, 45}, {5, -10, 55}, {-5,-10, 55}}});
-std::vector<std::vector<std::vector<GLfloat>>> new_square;
+std::vector<std::vector<std::vector<GLfloat>>> sun;
+std::vector<std::vector<std::vector<GLfloat>>> earth;
+std::vector<std::vector<std::vector<GLfloat>>> moon;
+std::vector<std::vector<std::vector<GLfloat>>> donut;
+std::vector<std::vector<std::vector<GLfloat>>> donut1;
 float FOV = M_PI / 3;
 float zNear = 0.1;
 float zFar = 1000.0;
@@ -46,6 +55,10 @@ int mouseX, mouseY;
 
 
 Entity player(0,0,0,0,0,0);
+Entity Sun(0,0,-40);
+Entity Earth(10,0,-40);
+Entity Moon(11.5, 0, -40);
+Entity Donut(0, 0, -20);
 bool move[5] = {0,0,0,0,0};
 bool mouse_in = true;
 void mouseEntry(int state)
@@ -54,17 +67,20 @@ void mouseEntry(int state)
         mouse_in = true;
     else if(state == GLUT_LEFT)
         mouse_in = false;
-
 }
 
 void mouseMove(int x, int y)
 {
     mouseX += x - initial[0];
     mouseY += y - initial[1];
+    if(mouseY > 1060)
+        mouseY = 1060;
+    else if(mouseY < -1060)
+        mouseY = -1060;
     if(initial[0] == -1)
     {
-        mouseX = 0;
         mouseY = 0;
+        mouseX = 0;
         initial[0] = MAX_WIDTH/2;
         initial[1] = MAX_HEIGHT/2;
     }
@@ -76,22 +92,13 @@ void draw_line(matrice<GLfloat>& plane1, matrice<GLfloat>& plane2)
         (plane1[1][0] > 1 && plane2[1][0] > 1) || (plane1[1][0] < -1 && plane2[1][0] < -1) ||
         (plane1[2][0] > 1 && plane2[2][0] > 1) || (plane1[2][0] < -1 && plane2[2][0] < -1))
         return;
-    if((abs(plane1[0][0]) <= 1) && (abs(plane1[1][0]) <= 1) && (abs(plane1[2][0]) <= 1) &&
-        (abs(plane2[0][0]) <= 1) && (abs(plane2[1][0]) <= 1) && (abs(plane2[2][0]) <= 1))
-    {
-        glVertex2f(plane1[0][0], plane1[1][0]);
-        glVertex2f(plane2[0][0], plane2[1][0]);
-        return;
-    }
-
-
     glVertex2f(plane1[0][0], plane1[1][0]);
     glVertex2f(plane2[0][0], plane2[1][0]);
 }
 
 void master_rotation_matrix(matrice<float>& rotation, float x, float y, float z)
 {
-    matrice<float> x_rotation({{1,0,0}, {0, cos(x), -sin(x)}, {0, sin(x), cos(x)}});
+    matrice<float> x_rotation(3,3);
     matrice<float> y_rotation(3,3);
     matrice<float> z_rotation(3,3);
     x_rotation.matrix = {{1,0,0}, {0, cos(x), -sin(x)}, {0, sin(x), cos(x)}};
@@ -111,31 +118,8 @@ int circular_index(int rel, int max)
     return -1;
 }
 
-void display()
+void render_3D(std::vector<std::vector<std::vector<float>>>& object)
 {
-    glClear(GL_COLOR_BUFFER_BIT);
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glBegin(GL_LINES);  
-    // Begin drawing a polygon (in this case, a square)
-    float forward = 0;
-    float right = 0;
-    if(!move[0] || !move[1])
-        forward = 0;
-    if(!move[2] || !move[3])
-        right = 0;
-    if(move[0])
-        forward = -.2;
-    else if(move[1])
-        forward = .2;
-    if(move[2])
-        right = .2;
-    else if(move[3])
-        right = -.2;
-    if(move[4] && player[1] == 0)
-        player.y_vel = 0.3;
-    player.z_vel = forward * cos(view_rad(mouseX))  + right * sin(view_rad(mouseX));
-    player.x_vel = -forward * sin(view_rad(mouseX)) + right * cos(view_rad(mouseX));
-    player.update();
     matrice<GLfloat> projection({{1.0f / (aspect * tan(FOV/2)), 0,0,0}, 
                                                                 {0, 1.0f/(tan(FOV/2)), 0,0},
                                                                 {0,0, (zFar+zNear)/(zNear-zFar), (2*zFar*zNear)/(zNear-zFar)},
@@ -143,16 +127,13 @@ void display()
     matrice<float> rotation(3,3);
     master_rotation_matrix(rotation, (mouseY) * M_PI / 2160, (mouseX) * M_PI / 2160, 0);
     matrice<float> player_pos({player[0], player[1], player[2]});
-    for(int x = 0; x < new_square.size(); x++)
+    for(auto& squares: object)
     {
-        std::vector<std::vector<GLfloat>>& squares= new_square[x]; 
         std::vector<matrice<GLfloat>> points;
         for(int i = 0; i < squares.size(); i++)
             points.push_back((std::vector<GLfloat>)squares[i]);
         for(matrice<GLfloat>& point: points)
         {
-            bool printing = (point.iloc(0) == square[0][3]) ? 1:0;
-            bool print2 = (point.iloc(0) == square[0][0]) ? 1:0;
             point.matrix = (point - player_pos).matrix;
             point.matrix = (rotation * point).matrix;
         }
@@ -201,7 +182,6 @@ void display()
         for(int i = 0; i < points.size(); i++)
         {
             matrice<GLfloat>& point = points[i];
-            bool printing = (point.iloc(0) == square[0][3]) ? 1: 0;
             point.addRow({1.0f});
             point.matrix = (projection * point).matrix;
             if(!point[3][0])
@@ -212,10 +192,6 @@ void display()
         for(int i = 0; i < points.size(); i++)
             draw_line(points[i], points[circular_index(i+1, points.size())]);
     }
-    if(mouseY > 1060)
-        mouseY = 1060;
-    else if(mouseY < -1060)
-        mouseY = -1060;
     if(mouse_in)
         glutWarpPointer(MAX_WIDTH/2, MAX_HEIGHT/2);
     mouseX %= 2160*2;
@@ -228,6 +204,108 @@ void display()
             player.y_vel = 0;
         }
     }
+}
+
+void un_update_pos(Entity& inp, std::vector<std::vector<std::vector<float>>>& shape)
+{
+    for(auto& faces: shape)
+    {
+        for(auto& vertex: faces)
+        {
+            vertex[0] -= inp[0];
+            vertex[1] -= inp[1];
+            vertex[2] -= inp[2];
+        }
+    }
+}
+
+void update_pos(Entity& inp, std::vector<std::vector<std::vector<float>>>& shape)
+{
+    for(auto& faces: shape)
+    {
+        for(auto& vertex: faces)
+        {
+            vertex[0] += inp[0];
+            vertex[1] += inp[1];
+            vertex[2] += inp[2];
+        }
+    }
+}
+
+float distance_for(Entity& first, Entity& second)
+{
+    pos dif = {first.x - second.x, first.y - second.y, first.z - second.z};
+    return sqrt(dif.x * dif.x + dif.y * dif.y + dif.z * dif.z);
+}
+
+void display()
+{
+    glClear(GL_COLOR_BUFFER_BIT);
+    glBegin(GL_LINES);  
+    // Begin drawing a polygon (in this case, a square)
+    float forward = 0;
+    float right = 0;
+    if(!move[0] || !move[1])
+        forward = 0;
+    if(!move[2] || !move[3])
+        right = 0;
+    if(move[0])
+        forward = -.2;
+    else if(move[1])
+        forward = .2;
+    if(move[2])
+        right = .2;
+    else if(move[3])
+        right = -.2;
+    if(move[4] && player[1] == 0)
+        player.y_vel = 0.3;
+    forward *= 2; right *= 2;
+    player.z_vel = forward * cos(view_rad(mouseX))  + right * sin(view_rad(mouseX));
+    player.x_vel = -forward * sin(view_rad(mouseX)) + right * cos(view_rad(mouseX));
+    player.update();
+    glColor3f(1.0f, 1.0f, 0.0f);
+    Sun.update();
+    update_pos(Sun, sun);
+    // render_3D(sun);
+    un_update_pos(Sun, sun);
+    glColor3f(0.0f, 1.0f, 0.0f);
+    float distance = distance_for(Earth, Sun);
+    if(distance != 0)
+    {
+        float acceleration = 0;
+        if(distance >= 5.75)
+            acceleration = 24.67401 / (distance * distance);
+        else
+            acceleration = 706504779.0 * 4 / 3 * M_PI * distance * 6.67e-11;
+        Earth.x_vel += acceleration * (Sun[0] - Earth[0]) / distance;
+        Earth.y_vel += acceleration * (Sun[1] - Earth[1]) / distance;
+        Earth.z_vel += acceleration * (Sun[2] - Earth[2]) / distance;
+    }
+    distance = distance_for(Earth, Moon);
+    if(distance != 0)
+    {
+        float acceleration = 0;
+        if(distance >= 5.75)
+            acceleration = 2.467401 / (distance * distance);
+        else
+            acceleration = 706504779.0 * 4 / 3 * M_PI * distance * 6.67e-11;
+        Moon.x_vel += acceleration * (Earth[0] - Moon[0]) / distance;
+        Moon.y_vel += acceleration * (Earth[1] - Moon[1]) / distance;
+        Moon.z_vel += acceleration * (Earth[2] - Moon[2]) / distance;
+    }
+    Earth.update();
+    update_pos(Earth, earth);
+    // render_3D(earth);
+    un_update_pos(Earth, earth);
+    glColor3f(1.0f, 1.0f, 1.0f);
+    Moon.update();
+    update_pos(Moon, moon);
+    // render_3D(moon);
+    un_update_pos(Moon, moon);
+    // update_pos(Donut, donut);
+    render_3D(donut);
+    render_3D(donut1);
+    // un_update_pos(Donut, donut);
     glEnd();
     // exit(0);
     glFlush();
@@ -284,6 +362,55 @@ void keyboards(unsigned char key, int x, int y)
 
 }
 
+void read_file(std::string file, std::vector<std::vector<std::vector<GLfloat>>>& object)
+{
+    std::ifstream file1(file);
+    if(!file1.is_open())
+        std::cerr << "Unable to open file" << std::endl;
+    std::vector<std::vector<GLfloat>> Vertexes1;
+    std::vector<std::vector<int>> Face1;
+    std::string line1;
+    while(std::getline(file1, line1))
+    {
+        std::stringstream ss(line1);
+        std::string prefix;
+        ss >> prefix;
+        if(prefix == "v")
+        {
+            std::vector<GLfloat> temp(3);
+            ss >> temp[0] >> temp[1] >> temp[2];
+            Vertexes1.push_back(temp);
+        }
+        else if(prefix == "f")
+        {
+            std::string vData;
+            std::vector<int> FaceInst;
+            while(ss >> vData)
+            {
+                std::stringstream vss(vData);
+                std::string value;
+                int indices[3] = {0,0,0};
+                for(int i =0; std::getline(vss, value, '/'); i++)
+                    if(!value.empty()) indices[i] = std::stoi(value);
+                FaceInst.push_back(indices[0] -1);
+            }
+            Face1.push_back(FaceInst);
+        }
+        else
+            std::getline(file1, line1);
+    }
+    for(int i = 0; i < Face1.size(); i++)
+    {
+        std::vector<std::vector<GLfloat>>& v = Vertexes1;
+        std::vector<std::vector<GLfloat>> temp_2D;
+        for(int j =0; j < Face1[i].size(); j++)
+        {
+            temp_2D.push_back(v[Face1[i][j]]);    
+        }
+        object.push_back(temp_2D);
+    }
+}
+
 int main()
 {
     bool testing = 0;
@@ -294,18 +421,9 @@ int main()
         matrice<int> second(2, 4);
         second.matrix = {{0,1, 2, 3}, {0,1, 2, 3}};
         matrice<int> test(2, 2);
-        // (val * second).toString();
         matrice<int> test2(2,3);
         std::vector<std::vector<int>> temp_ve = {{3,4,5},{0,1,2}};
         test2 = temp_ve;
-        // test2.toString();
-        // std::vector<matrice<GLfloat>> temp = {matrice<GLfloat>(3,1), matrice<GLfloat>(3,1)};
-        // // temp.insert(temp.begin(), 3);
-        // for(int i = 0; i < temp.size(); i++)
-        // {
-        //     if(i == 1)
-        //         temp.insert(temp.begin() + i + 1, matrice<GLfloat>(3,1));
-        // }
         return 0;
     }
     for(std::vector<std::vector<GLfloat>>& squares: square)
@@ -322,10 +440,117 @@ int main()
     {
         for(std::vector<GLfloat>& plane: squares)
         {
+            plane[0] += 20;
             plane[2] *= -1;
         }
     }
-    std::ifstream file("First_Cube.obj");
+
+    std::string input_file = "First_Cube.obj";
+    input_file = "NewRatHead.obj";
+
+    std::ifstream file1("Test.obj");
+    if(!file1.is_open())
+        std::cerr << "Unable to open file" << std::endl;
+    std::vector<std::vector<GLfloat>> Vertexes1;
+    std::vector<std::vector<int>> Face1;
+    std::string line1;
+    while(std::getline(file1, line1))
+    {
+        std::stringstream ss(line1);
+        std::string prefix;
+        ss >> prefix;
+        if(prefix == "v")
+        {
+            std::vector<GLfloat> temp(3);
+            ss >> temp[0] >> temp[1] >> temp[2];
+            Vertexes1.push_back(temp);
+        }
+        else if(prefix == "f")
+        {
+            std::string vData;
+            std::vector<int> FaceInst;
+            while(ss >> vData)
+            {
+                std::stringstream vss(vData);
+                std::string value;
+                int indices[3] = {0,0,0};
+                for(int i =0; std::getline(vss, value, '/'); i++)
+                    if(!value.empty()) indices[i] = std::stoi(value);
+                FaceInst.push_back(indices[0] -1);
+            }
+            Face1.push_back(FaceInst);
+        }
+        else
+            std::getline(file1, line1);
+    }
+    for(int i = 0; i < Face1.size(); i++)
+    {
+        std::vector<std::vector<GLfloat>>& v = Vertexes1;
+        std::vector<std::vector<GLfloat>> temp_2D;
+        for(int j =0; j < Face1[i].size(); j++)
+        {
+            temp_2D.push_back(v[Face1[i][j]]);    
+        }
+        donut.push_back(temp_2D);
+    }
+    for(auto& squre1: donut)
+        for(auto& row: squre1)
+            row[2] += 10.0;
+    std::ifstream file2("Donut2.obj");
+    if(!file1.is_open())
+        std::cerr << "Unable to open file" << std::endl;
+    std::vector<std::vector<GLfloat>> Vertexes2;
+    std::vector<std::vector<int>> Face2;
+    std::string line2;
+    while(std::getline(file2, line2))
+    {
+        std::stringstream ss(line2);
+        std::string prefix;
+        ss >> prefix;
+        if(prefix == "v")
+        {
+            std::vector<GLfloat> temp(3);
+            ss >> temp[0] >> temp[1] >> temp[2];
+            Vertexes2.push_back(temp);
+        }
+        else if(prefix == "f")
+        {
+            std::string vData;
+            std::vector<int> FaceInst;
+            while(ss >> vData)
+            {
+                std::stringstream vss(vData);
+                std::string value;
+                int indices[3] = {0,0,0};
+                for(int i =0; std::getline(vss, value, '/'); i++)
+                    if(!value.empty()) indices[i] = std::stoi(value);
+                FaceInst.push_back(indices[0] -1);
+            }
+            Face2.push_back(FaceInst);
+        }
+        else
+            std::getline(file2, line2);
+    }
+    for(int i = 0; i < Face2.size(); i++)
+    {
+        std::vector<std::vector<GLfloat>>& v = Vertexes2;
+        std::vector<std::vector<GLfloat>> temp_2D;
+        for(int j =0; j < Face2[i].size(); j++)
+        {
+            temp_2D.push_back(v[Face2[i][j]]);    
+        }
+        donut1.push_back(temp_2D);
+    }
+    for(auto& squre1: donut1)
+    {
+        for(auto& row: squre1)
+        {
+            row[2] += 10.0;
+            row[0] += 10.0;
+        }
+
+    }
+    std::ifstream file("Sphere.obj");
 
     if(!file.is_open())
         std::cerr << "Unable to open file" << std::endl;
@@ -370,16 +595,31 @@ int main()
         {
             temp_2D.push_back(v[Face[i][j]]);    
         }
-        new_square.push_back(temp_2D);
+        sun.push_back(temp_2D);
     }
-    for(auto& square: new_square)
+    earth = sun;
+    moon = earth;
+    for(auto& faces: earth)
     {
-        for(auto& row: square)
+        for(auto& vertex: faces)
         {
-            
-            row[2] -= 40;
+            vertex[0] *= .07;
+            vertex[1] *= .07;
+            vertex[2] *= .07;
         }
     }
+    for(auto& faces: moon)
+    {
+        for(auto& vertex: faces)
+        {
+            vertex[0] *= .02;
+            vertex[1] *= .02;
+            vertex[2] *= .02;
+        }
+    }
+    Sun.x_vel = .1;
+    Earth.z_vel = -1.57*1.2;
+    Moon.z_vel = -1.28;
     int argc = 1;
     char* argv[] = {(char*)"my_program"};
     glutInit(&argc, argv);
